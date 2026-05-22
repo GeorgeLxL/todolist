@@ -23,6 +23,7 @@ import {
 } from "@dnd-kit/core";
 import clsx from "clsx";
 import { useTaskModal } from "@/lib/stores";
+import { useToday } from "@/components/today-context";
 import { setTaskSchedule } from "@/server/actions/tasks";
 import { sortTasks } from "@/lib/sort";
 import { formatTime } from "@/lib/date-time";
@@ -152,6 +153,7 @@ function DayCell({
   tall?: boolean;
 }) {
   const iso = format(day, "yyyy-MM-dd");
+  const today = useToday();
   const { setNodeRef, isOver } = useDroppable({ id: `day:${iso}` });
   const isToday = iso === format(new Date(), "yyyy-MM-dd");
 
@@ -174,7 +176,7 @@ function DayCell({
         {format(day, "d")}
       </div>
       <div className="space-y-1">
-        {sortTasks(tasks).map((t) => (
+        {sortTasks(tasks, today).map((t) => (
           <CalendarChip key={t.id} task={t} />
         ))}
       </div>

@@ -16,6 +16,7 @@ import {
 } from "@dnd-kit/core";
 import clsx from "clsx";
 import { sortTasks } from "@/lib/sort";
+import { useToday } from "@/components/today-context";
 import { filterByDone, type DoneFilter } from "@/lib/view-filter";
 import { changeTaskStatus } from "@/server/actions/tasks";
 import { TaskCard } from "@/components/tasks/task-card";
@@ -29,6 +30,7 @@ export function KanbanBoard({
   filter: DoneFilter;
 }) {
   const router = useRouter();
+  const today = useToday();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
@@ -82,7 +84,7 @@ export function KanbanBoard({
           <KanbanColumn
             key={status}
             status={status}
-            tasks={sortTasks(columns[status])}
+            tasks={sortTasks(columns[status], today)}
           />
         ))}
       </div>

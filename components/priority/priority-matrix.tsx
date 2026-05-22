@@ -16,6 +16,7 @@ import {
 } from "@dnd-kit/core";
 import clsx from "clsx";
 import { sortTasks } from "@/lib/sort";
+import { useToday } from "@/components/today-context";
 import { filterByDone, type DoneFilter } from "@/lib/view-filter";
 import { setTaskPriority } from "@/server/actions/tasks";
 import { TaskCard } from "@/components/tasks/task-card";
@@ -52,6 +53,7 @@ export function PriorityMatrix({
   filter: DoneFilter;
 }) {
   const router = useRouter();
+  const today = useToday();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
@@ -98,7 +100,7 @@ export function PriorityMatrix({
           <Quadrant
             key={q.id}
             quad={q}
-            tasks={sortTasks(grouped[q.id])}
+            tasks={sortTasks(grouped[q.id], today)}
           />
         ))}
       </div>

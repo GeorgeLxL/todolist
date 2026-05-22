@@ -23,6 +23,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import clsx from "clsx";
 import { useTaskModal, useListCollapse } from "@/lib/stores";
+import { useToday } from "@/components/today-context";
 import { confirmDialog, promptDialog } from "@/components/ui/dialog";
 import { sortTasks } from "@/lib/sort";
 import { filterByDone, type DoneFilter } from "@/lib/view-filter";
@@ -225,6 +226,7 @@ function ListCard({
     useSortable({ id: list.id });
   const { setNodeRef: dropRef, isOver } = useDroppable({ id: `d:${list.id}` });
   const openCreate = useTaskModal((s) => s.openCreate);
+  const today = useToday();
   const collapsed = useListCollapse((s) => s.collapsed[list.id] ?? false);
   const toggleCollapse = useListCollapse((s) => s.toggle);
   const [, start] = useTransition();
@@ -330,7 +332,7 @@ function ListCard({
               Drop tasks here or add one.
             </p>
           )}
-          {sortTasks(tasks).map((t) => (
+          {sortTasks(tasks, today).map((t) => (
             <DraggableTask key={t.id} task={t} />
           ))}
         </div>

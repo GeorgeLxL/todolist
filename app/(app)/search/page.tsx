@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth/current-user";
 import { getWorkspace, getTeamsDetailed } from "@/server/queries";
 import { sortTasks } from "@/lib/sort";
+import { todayInTz } from "@/lib/date-time";
 import { TaskCard } from "@/components/tasks/task-card";
 
 export const dynamic = "force-dynamic";
@@ -56,7 +57,7 @@ export default async function SearchPage({
         <p className="text-sm text-muted">No tasks matched.</p>
       ) : (
         <div className="space-y-2">
-          {sortTasks(results).map((t) => (
+          {sortTasks(results, todayInTz(user.timezone)).map((t) => (
             <TaskCard key={t.id} task={t} />
           ))}
         </div>

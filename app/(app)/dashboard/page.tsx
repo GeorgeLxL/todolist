@@ -13,10 +13,12 @@ function Section({
   title,
   tasks,
   empty,
+  today,
 }: {
   title: string;
   tasks: TaskWithMeta[];
   empty: string;
+  today: string;
 }) {
   return (
     <section className="card p-4">
@@ -28,7 +30,7 @@ function Section({
         <p className="text-sm text-muted">{empty}</p>
       ) : (
         <div className="space-y-2">
-          {sortTasks(tasks)
+          {sortTasks(tasks, today)
             .slice(0, 8)
             .map((t) => (
               <TaskCard key={t.id} task={t} />
@@ -110,31 +112,37 @@ export default async function DashboardPage() {
           title="Today"
           tasks={todayTasks}
           empty="Nothing scheduled for today."
+          today={today}
         />
         <Section
           title="Overdue"
           tasks={overdue}
           empty="No overdue tasks. Nice."
+          today={today}
         />
         <Section
           title="Upcoming (7 days)"
           tasks={upcoming}
           empty="Nothing coming up this week."
+          today={today}
         />
         <Section
           title="Assigned to me"
           tasks={assignedToMe}
           empty="No team tasks assigned to you."
+          today={today}
         />
         <Section
           title="Team tasks"
           tasks={teamTasks}
           empty="No active team tasks."
+          today={today}
         />
         <Section
           title="Completed this week"
           tasks={completedThisWeek}
           empty="No tasks completed yet this week."
+          today={today}
         />
       </div>
     </div>

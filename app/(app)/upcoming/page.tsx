@@ -60,7 +60,7 @@ export default async function UpcomingPage({
                 {label}
                 <span className="ml-2 font-normal">{formatDateHuman(d)}</span>
               </h2>
-              {sortTasks(groups.get(d)!).map((t) => (
+              {sortTasks(groups.get(d)!, today).map((t) => (
                 <TaskCard key={t.id} task={t} />
               ))}
             </section>
