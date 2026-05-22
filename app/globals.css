@@ -1,0 +1,187 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root,
+[data-theme="light"] {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #eef0f3;
+  --border: #dfe2e8;
+  --text: #1a1d23;
+  --muted: #6b7280;
+  --primary: #4f46e5;
+  --primary-fg: #ffffff;
+  --accent: #6366f1;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warning: #d97706;
+}
+
+[data-theme="dark"] {
+  --bg: #0f1115;
+  --surface: #1a1d23;
+  --surface-2: #242832;
+  --border: #333845;
+  --text: #e8eaed;
+  --muted: #9aa0ac;
+  --primary: #6366f1;
+  --primary-fg: #ffffff;
+  --accent: #818cf8;
+  --danger: #ef4444;
+  --success: #22c55e;
+  --warning: #f59e0b;
+}
+
+[data-theme="green"] {
+  --bg: #eef6ef;
+  --surface: #ffffff;
+  --surface-2: #e1efe3;
+  --border: #c8e0cc;
+  --text: #15321c;
+  --muted: #5a7a62;
+  --primary: #2f8f4e;
+  --primary-fg: #ffffff;
+  --accent: #38b261;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warning: #d97706;
+}
+
+[data-theme="pink"] {
+  --bg: #fdeef4;
+  --surface: #ffffff;
+  --surface-2: #fbe1ec;
+  --border: #f3c9da;
+  --text: #3a1424;
+  --muted: #95667c;
+  --primary: #db2777;
+  --primary-fg: #ffffff;
+  --accent: #ec4899;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warning: #d97706;
+}
+
+[data-theme="yellow"] {
+  --bg: #fdf8e7;
+  --surface: #ffffff;
+  --surface-2: #faf0d2;
+  --border: #ecdca6;
+  --text: #3a2f0c;
+  --muted: #8a7a45;
+  --primary: #ca8a04;
+  --primary-fg: #ffffff;
+  --accent: #eab308;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warning: #d97706;
+}
+
+[data-theme="purple"] {
+  --bg: #f4eefb;
+  --surface: #ffffff;
+  --surface-2: #ebe0f8;
+  --border: #d9c6ee;
+  --text: #2a1640;
+  --muted: #7a6595;
+  --primary: #9333ea;
+  --primary-fg: #ffffff;
+  --accent: #a855f7;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warning: #d97706;
+}
+
+[data-theme="blue"] {
+  --bg: #eef4fd;
+  --surface: #ffffff;
+  --surface-2: #e0ebfa;
+  --border: #c6d9f1;
+  --text: #122036;
+  --muted: #5e7392;
+  --primary: #2563eb;
+  --primary-fg: #ffffff;
+  --accent: #3b82f6;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warning: #d97706;
+}
+
+[data-theme="red"] {
+  --bg: #fdeeee;
+  --surface: #ffffff;
+  --surface-2: #fbe0e0;
+  --border: #f1c6c6;
+  --text: #3a1414;
+  --muted: #956565;
+  --primary: #dc2626;
+  --primary-fg: #ffffff;
+  --accent: #ef4444;
+  --danger: #b91c1c;
+  --success: #16a34a;
+  --warning: #d97706;
+}
+
+[data-theme="brown"] {
+  --bg: #f5efe8;
+  --surface: #ffffff;
+  --surface-2: #ebe2d6;
+  --border: #d8c8b4;
+  --text: #2f2418;
+  --muted: #7d6c55;
+  --primary: #8b5e34;
+  --primary-fg: #ffffff;
+  --accent: #a87544;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warning: #d97706;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-primary text-primary-fg hover:opacity-90;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-surface-2 text-text hover:bg-border;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-danger text-white hover:opacity-90;
+  }
+  .input {
+    @apply w-full rounded-lg border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-primary;
+  }
+  .card {
+    @apply rounded-xl border bg-surface;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+}
