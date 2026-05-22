@@ -52,14 +52,21 @@ export function KanbanBoard({
     };
     for (const t of visible) {
       const st = statusMap[t.id] ?? t.status;
-      let task: TaskWithMeta = { ...t, status: st };
-      // Recurring tasks: "done today" tracks the Progress column, so the
-      // card's checkbox flips together with the drag.
+      // Mirror changeTaskStatus so a dragged card reflects its new state
+      // immediately: the Done column fully completes the task; for recurring
+      // tasks the Progress column is the "done today" state.
+      let task: TaskWithMeta = {
+        ...t,
+        status: st,
+        is_fully_complete: st === "done",
+      };
       if (t.is_recurring) {
         if (st === "progress")
           task = { ...task, is_done_today: true, done_today_date: today };
         else if (st === "todo" || st === "review")
           task = { ...task, is_done_today: false };
+      } else if (st === "done") {
+        task = { ...task, is_done_today: true };
       }
       map[st].push(task);
     }
