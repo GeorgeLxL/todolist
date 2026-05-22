@@ -9,7 +9,13 @@ import { confirmDialog, alertDialog } from "@/components/ui/dialog";
 import { isDoneToday, isOverdue, STATUS_COLOR } from "@/lib/task-helpers";
 import { STATUS_LABEL, type Task, type TaskWithMeta } from "@/types/task";
 import { formatTime, formatDateHuman } from "@/lib/date-time";
-import { IconCheck, IconEdit, IconArchive, IconTrash } from "@/components/icons";
+import {
+  IconCheck,
+  IconEdit,
+  IconArchive,
+  IconTrash,
+  IconChevron,
+} from "@/components/icons";
 import {
   toggleTaskDone,
   markDoneToday,
@@ -37,6 +43,7 @@ export function TaskCard({
   // Local copy so actions reflect instantly; re-syncs when server data arrives.
   const [local, setLocal] = useState<TaskWithMeta>(task);
   const [hidden, setHidden] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   useEffect(() => {
     setLocal(task);
     setHidden(false);
@@ -85,12 +92,24 @@ export function TaskCard({
 
   function toggleCheckbox() {
     if (local.is_recurring) {
-      mutate(
-        doneToday
-          ? { is_done_today: false, status: "todo" }
-          : { is_done_today: true, done_today_date: today, status: "progress" },
-        () => markDoneToday(local.id),
-      );
+      if (fully) {
+        // A fully-completed recurring task: unchecking re-opens it.
+        mutate(
+          { is_fully_complete: false, status: "progress" },
+          () => completeRecurringTask(local.id),
+        );
+      } else {
+        mutate(
+          doneToday
+            ? { is_done_today: false, status: "todo" }
+            : {
+                is_done_today: true,
+                done_today_date: today,
+                status: "progress",
+              },
+          () => markDoneToday(local.id),
+        );
+      }
     } else {
       mutate(
         fully
@@ -133,58 +152,78 @@ export function TaskCard({
         </button>
       )}
 
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span
-            className={clsx(
-              "text-sm font-medium",
-              fully && "line-through text-muted",
-            )}
-          >
-            {local.title}
-          </span>
-          {local.is_urgent && (
-            <span className="chip bg-danger/15 text-danger">Urgent</span>
-          )}
-          {local.is_important && (
-            <span className="chip bg-warning/15 text-warning">Important</span>
-          )}
-          {local.is_recurring && (
-            <span className="chip bg-accent/15 text-accent">↻ Recurring</span>
-          )}
-          {doneToday && !fully && (
-            <span className="chip border border-success text-success">
-              Completed today
+      <div
+        className="min-w-0 flex-1 cursor-pointer"
+        onClick={() => setExpanded((e) => !e)}
+        title={expanded ? "Collapse" : "Expand"}
+      >
+        <div className="flex items-start gap-1.5">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+            <span
+              className={clsx(
+                "text-sm font-medium",
+                fully && "line-through text-muted",
+              )}
+            >
+              {local.title}
             </span>
-          )}
-          {overdue && (
-            <span className="chip bg-danger/15 text-danger">Overdue</span>
-          )}
+            {local.is_urgent && (
+              <span className="chip bg-danger/15 text-danger">Urgent</span>
+            )}
+            {local.is_important && (
+              <span className="chip bg-warning/15 text-warning">
+                Important
+              </span>
+            )}
+            {local.is_recurring && (
+              <span className="chip bg-accent/15 text-accent">
+                ↻ Recurring
+              </span>
+            )}
+            {doneToday && !fully && (
+              <span className="chip border border-success text-success">
+                Completed today
+              </span>
+            )}
+            {overdue && (
+              <span className="chip bg-danger/15 text-danger">Overdue</span>
+            )}
+          </div>
+          <IconChevron
+            className={clsx(
+              "mt-0.5 h-4 w-4 shrink-0 text-muted transition-transform",
+              expanded && "rotate-90",
+            )}
+          />
         </div>
 
-        {local.description && (
-          <p className="mt-0.5 truncate text-xs text-muted">
+        {expanded && local.description && (
+          <p className="mt-1.5 whitespace-pre-wrap text-xs text-muted">
             {local.description}
           </p>
         )}
 
-        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
-          <span className={clsx("chip", STATUS_COLOR[local.status])}>
-            {STATUS_LABEL[local.status]}
-          </span>
-          {local.time && <span>{formatTime(local.time)}</span>}
-          {local.date && <span>{formatDateHuman(local.date)}</span>}
-          {local.due_date && <span>Due {formatDateHuman(local.due_date)}</span>}
-          {showList && <span>· {local.list_name}</span>}
-          {local.type === "team" && (
-            <span>
-              ·{" "}
-              {local.assignee_username
-                ? `@${local.assignee_username}`
-                : "Unassigned"}
+        {expanded && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted">
+            <span className={clsx("chip", STATUS_COLOR[local.status])}>
+              {STATUS_LABEL[local.status]}
             </span>
-          )}
-        </div>
+            {local.time && <span>{formatTime(local.time)}</span>}
+            {local.date && <span>{formatDateHuman(local.date)}</span>}
+            {local.due_date && (
+              <span>Due {formatDateHuman(local.due_date)}</span>
+            )}
+            {showList && <span>· {local.list_name}</span>}
+            {local.type === "team" && (
+              <span>
+                ·{" "}
+                {local.assignee_username
+                  ? `@${local.assignee_username}`
+                  : "Unassigned"}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
