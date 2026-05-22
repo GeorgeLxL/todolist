@@ -207,28 +207,31 @@ function TaskForm({
             onChange={(e) => setTime(e.target.value)}
           />
         </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-muted">
-            Due date
-          </label>
-          <input
-            type="date"
-            className="input"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-muted">
-            End date
-          </label>
-          <input
-            type="date"
-            className="input"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-        </div>
+        {repeatType === "none" ? (
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">
+              Due date
+            </label>
+            <input
+              type="date"
+              className="input"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+          </div>
+        ) : (
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted">
+              End date
+            </label>
+            <input
+              type="date"
+              className="input"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -245,6 +248,8 @@ function TaskForm({
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
+            <option value="workdays">Workdays (Mon–Fri)</option>
+            <option value="weekends">Weekends (Sat–Sun)</option>
             <option value="custom">Custom</option>
           </select>
         </div>

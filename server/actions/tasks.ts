@@ -96,8 +96,9 @@ export async function createTask(input: TaskInput): Promise<Result> {
       description: input.description ?? null,
       date,
       time: input.time || null,
-      due_date: input.due_date || null,
-      end_date: input.end_date || null,
+      // due_date applies only to non-recurring tasks; end_date only to recurring.
+      due_date: isRecurring ? null : input.due_date || null,
+      end_date: isRecurring ? input.end_date || null : null,
       timezone,
       status: input.status ?? "todo",
       is_recurring: isRecurring,
@@ -164,6 +165,14 @@ export async function updateTask(
     patch.date !== undefined ? patch.date || null : task.date;
   if (resultingRecurring && !resultingDate) {
     update.date = todayInTz(task.timezone ?? user.timezone);
+  }
+
+  // due_date applies only to non-recurring tasks; end_date only to recurring.
+  // Clear whichever field does not apply so unused values never linger.
+  if (resultingRecurring) {
+    update.due_date = null;
+  } else {
+    update.end_date = null;
   }
 
   await supabaseAdmin().from("tasks").update(update).eq("id", id);

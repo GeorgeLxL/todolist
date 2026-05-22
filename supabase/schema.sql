@@ -113,7 +113,8 @@ create table if not exists tasks (
                        check (status in ('todo','progress','review','done')),
   is_recurring      boolean not null default false,
   repeat_type       text not null default 'none'
-                       check (repeat_type in ('none','daily','weekly','monthly','custom')),
+                       check (repeat_type in ('none','daily','weekly','monthly',
+                                              'workdays','weekends','custom')),
   repeat_interval   int not null default 1,           -- "every N" for custom
   repeat_until      date,
   is_done_today     boolean not null default false,

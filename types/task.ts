@@ -1,6 +1,13 @@
 export type TaskType = "personal" | "team";
 export type TaskStatus = "todo" | "progress" | "review" | "done";
-export type RepeatType = "none" | "daily" | "weekly" | "monthly" | "custom";
+export type RepeatType =
+  | "none"
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "workdays"
+  | "weekends"
+  | "custom";
 
 export const TASK_STATUSES: TaskStatus[] = ["todo", "progress", "review", "done"];
 

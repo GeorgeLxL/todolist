@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getUserTeamIds } from "@/lib/permissions";
+import { todayInTz } from "@/lib/date-time";
 import type { User } from "@/types/user";
 import type { List } from "@/types/list";
 import type { Task, TaskWithMeta } from "@/types/task";
@@ -90,6 +91,27 @@ export const getWorkspace = cache(async function getWorkspace(
     ...((personalTasksRes.data ?? []) as Task[]),
     ...((teamTasksRes.data ?? []) as Task[]),
   ];
+
+  // Overdue tasks are automatically flagged urgent. This runs at most once
+  // per task (afterwards they are already urgent, so the set is empty).
+  const todayStr = todayInTz(user.timezone);
+  const overdueIds = rawTasks
+    .filter(
+      (t) =>
+        !t.is_recurring &&
+        !t.is_urgent &&
+        !t.is_fully_complete &&
+        !!(t.due_date ?? t.date) &&
+        (t.due_date ?? t.date)! < todayStr,
+    )
+    .map((t) => t.id);
+  if (overdueIds.length) {
+    await db.from("tasks").update({ is_urgent: true }).in("id", overdueIds);
+    const overdueSet = new Set(overdueIds);
+    for (const t of rawTasks) {
+      if (overdueSet.has(t.id)) t.is_urgent = true;
+    }
+  }
 
   const listMap = indexBy<List>([...personalLists, ...teamLists]);
 

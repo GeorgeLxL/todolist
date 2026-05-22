@@ -115,6 +115,7 @@ export function TaskCard({
       className={clsx(
         "card flex items-start gap-3 p-3",
         fully && "opacity-70",
+        overdue && "border-2 border-danger bg-danger/5",
       )}
     >
       {mode === "normal" && (

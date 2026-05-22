@@ -13,9 +13,10 @@ export function isTaskDone(t: Pick<Task, "is_fully_complete">): boolean {
 }
 
 export function isOverdue(
-  t: Pick<Task, "due_date" | "date" | "is_fully_complete">,
+  t: Pick<Task, "due_date" | "date" | "is_fully_complete" | "is_recurring">,
   today: string,
 ): boolean {
+  if (t.is_recurring) return false; // recurring tasks repeat, never "overdue"
   const d = t.due_date ?? t.date;
   return !!d && d < today && !t.is_fully_complete;
 }
