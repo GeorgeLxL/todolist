@@ -80,6 +80,11 @@ export async function createTask(input: TaskInput): Promise<Result> {
   const repeatType = input.repeat_type ?? "none";
   const isRecurring = repeatType !== "none";
 
+  // A recurring task always needs a date so it shows in date-based views;
+  // default it to today (in the task's timezone) when none was chosen.
+  let date = input.date || null;
+  if (isRecurring && !date) date = todayInTz(timezone);
+
   const { data: created } = await db
     .from("tasks")
     .insert({
@@ -89,7 +94,7 @@ export async function createTask(input: TaskInput): Promise<Result> {
       user_id: isTeam ? input.user_id ?? null : user.id,
       title,
       description: input.description ?? null,
-      date: input.date || null,
+      date,
       time: input.time || null,
       due_date: input.due_date || null,
       end_date: input.end_date || null,
@@ -152,6 +157,15 @@ export async function updateTask(
   if (patch.repeat_until !== undefined)
     update.repeat_until = patch.repeat_until || null;
 
+  // Keep recurring tasks dated so they stay visible in date-based views.
+  const resultingRecurring =
+    repeatType !== undefined ? repeatType !== "none" : task.is_recurring;
+  const resultingDate =
+    patch.date !== undefined ? patch.date || null : task.date;
+  if (resultingRecurring && !resultingDate) {
+    update.date = todayInTz(task.timezone ?? user.timezone);
+  }
+
   await supabaseAdmin().from("tasks").update(update).eq("id", id);
   await logActivity({
     action: "task_updated",
@@ -212,6 +226,17 @@ export async function changeTaskStatus(
     if (!task.is_recurring) update.is_done_today = true;
   } else {
     update.is_fully_complete = false;
+  }
+
+  // For recurring tasks "done today" is the Progress column - keep the
+  // is_done_today flag (which drives the checkbox) in sync with the status.
+  if (task.is_recurring) {
+    if (status === "progress") {
+      update.is_done_today = true;
+      update.done_today_date = todayInTz(task.timezone ?? user.timezone);
+    } else if (status === "todo" || status === "review") {
+      update.is_done_today = false;
+    }
   }
 
   await supabaseAdmin().from("tasks").update(update).eq("id", id);

@@ -52,10 +52,19 @@ export function KanbanBoard({
     };
     for (const t of visible) {
       const st = statusMap[t.id] ?? t.status;
-      map[st].push({ ...t, status: st });
+      let task: TaskWithMeta = { ...t, status: st };
+      // Recurring tasks: "done today" tracks the Progress column, so the
+      // card's checkbox flips together with the drag.
+      if (t.is_recurring) {
+        if (st === "progress")
+          task = { ...task, is_done_today: true, done_today_date: today };
+        else if (st === "todo" || st === "review")
+          task = { ...task, is_done_today: false };
+      }
+      map[st].push(task);
     }
     return map;
-  }, [visible, statusMap]);
+  }, [visible, statusMap, today]);
 
   function onDragStart(e: DragStartEvent) {
     setDragId(String(e.active.id));

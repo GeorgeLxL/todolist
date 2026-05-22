@@ -26,9 +26,10 @@ import { useTaskModal } from "@/lib/stores";
 import { useToday } from "@/components/today-context";
 import { setTaskSchedule } from "@/server/actions/tasks";
 import { sortTasks } from "@/lib/sort";
+import { STATUS_COLOR } from "@/lib/task-helpers";
 import { formatTime } from "@/lib/date-time";
 import type { RangeFilter } from "@/lib/view-filter";
-import type { TaskWithMeta } from "@/types/task";
+import { STATUS_LABEL, type TaskWithMeta } from "@/types/task";
 
 export function CalendarView({
   tasks,
@@ -175,20 +176,29 @@ function DayCell({
       >
         {format(day, "d")}
       </div>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {sortTasks(tasks, today).map((t) => (
-          <CalendarChip key={t.id} task={t} />
+          <CalendarTaskCard key={t.id} task={t} />
         ))}
       </div>
     </div>
   );
 }
 
-function CalendarChip({ task }: { task: TaskWithMeta }) {
+function CalendarTaskCard({ task }: { task: TaskWithMeta }) {
   const openEdit = useTaskModal((s) => s.openEdit);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: task.id,
   });
+
+  const accent = task.is_fully_complete
+    ? "border-l-border"
+    : task.is_urgent
+      ? "border-l-danger"
+      : task.is_important
+        ? "border-l-warning"
+        : "border-l-primary";
+
   return (
     <div
       ref={setNodeRef}
@@ -196,20 +206,36 @@ function CalendarChip({ task }: { task: TaskWithMeta }) {
       {...listeners}
       onClick={() => openEdit(task)}
       className={clsx(
-        "cursor-pointer touch-none truncate rounded px-1.5 py-1 text-xs",
-        task.is_fully_complete
-          ? "bg-surface-2 text-muted line-through"
-          : task.is_urgent
-            ? "bg-danger/15 text-danger"
-            : "bg-primary/15 text-primary",
+        "card cursor-pointer touch-none border-l-4 p-1.5",
+        accent,
         isDragging && "opacity-40",
       )}
       title={task.title}
     >
-      {task.time && (
-        <span className="mr-1 font-medium">{formatTime(task.time)}</span>
-      )}
-      {task.title}
+      <p
+        className={clsx(
+          "line-clamp-2 text-xs font-medium leading-snug",
+          task.is_fully_complete && "text-muted line-through",
+        )}
+      >
+        {task.title}
+      </p>
+      <div className="mt-1 flex flex-wrap items-center gap-1 text-[10px] text-muted">
+        {task.time && (
+          <span className="font-semibold text-text">
+            {formatTime(task.time)}
+          </span>
+        )}
+        <span
+          className={clsx(
+            "rounded px-1 py-0.5 font-medium",
+            STATUS_COLOR[task.status],
+          )}
+        >
+          {STATUS_LABEL[task.status]}
+        </span>
+        {task.is_recurring && <span className="text-accent">↻</span>}
+      </div>
     </div>
   );
 }
