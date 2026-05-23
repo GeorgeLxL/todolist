@@ -16,10 +16,12 @@ import {
 } from "@dnd-kit/core";
 import clsx from "clsx";
 import { sortTasks } from "@/lib/sort";
+import { isDoneGrouped } from "@/lib/task-helpers";
 import { useToday } from "@/components/today-context";
 import { filterByDone, type DoneFilter } from "@/lib/view-filter";
 import { setTaskPriority } from "@/server/actions/tasks";
 import { TaskCard } from "@/components/tasks/task-card";
+import { IconChevron } from "@/components/icons";
 import type { TaskWithMeta } from "@/types/task";
 
 type Quad = "ui" | "u" | "i" | "n";
@@ -64,7 +66,10 @@ export function PriorityMatrix({
     setQuadMap(Object.fromEntries(tasks.map((t) => [t.id, quadOf(t)])));
   }, [tasks]);
 
-  const visible = useMemo(() => filterByDone(tasks, filter), [tasks, filter]);
+  const visible = useMemo(
+    () => filterByDone(tasks, filter, today),
+    [tasks, filter, today],
+  );
 
   const grouped = useMemo(() => {
     const map: Record<Quad, TaskWithMeta[]> = { ui: [], u: [], i: [], n: [] };
@@ -100,7 +105,8 @@ export function PriorityMatrix({
           <Quadrant
             key={q.id}
             quad={q}
-            tasks={sortTasks(grouped[q.id], today)}
+            tasks={grouped[q.id]}
+            filter={filter}
           />
         ))}
       </div>
@@ -118,11 +124,19 @@ export function PriorityMatrix({
 function Quadrant({
   quad,
   tasks,
+  filter,
 }: {
   quad: (typeof QUADRANTS)[number];
   tasks: TaskWithMeta[];
+  filter: DoneFilter;
 }) {
+  const today = useToday();
   const { setNodeRef, isOver } = useDroppable({ id: `q:${quad.id}` });
+  const [doneOpen, setDoneOpen] = useState(false);
+
+  const undone = tasks.filter((t) => !isDoneGrouped(t, today));
+  const done = tasks.filter((t) => isDoneGrouped(t, today));
+
   return (
     <div
       ref={setNodeRef}
@@ -138,9 +152,39 @@ function Quadrant({
         <span className="text-xs text-muted">{quad.hint}</span>
       </div>
       <div className="space-y-2">
-        {tasks.map((t) => (
+        {sortTasks(undone, today).map((t) => (
           <DraggableCard key={t.id} task={t} />
         ))}
+        {filter === "done" &&
+          sortTasks(done, today).map((t) => (
+            <DraggableCard key={t.id} task={t} />
+          ))}
+        {filter === "all" && done.length > 0 && (
+          <div className="pt-1">
+            <button
+              onClick={() => setDoneOpen((o) => !o)}
+              className="flex w-full items-center gap-1.5 rounded px-1 py-1 text-xs font-medium text-muted hover:bg-surface-2"
+            >
+              <IconChevron
+                className={clsx(
+                  "h-3.5 w-3.5 transition-transform",
+                  doneOpen && "rotate-90",
+                )}
+              />
+              <span>Done</span>
+              <span className="chip bg-surface-2 text-muted">
+                {done.length}
+              </span>
+            </button>
+            {doneOpen && (
+              <div className="mt-1 space-y-2">
+                {sortTasks(done, today).map((t) => (
+                  <DraggableCard key={t.id} task={t} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

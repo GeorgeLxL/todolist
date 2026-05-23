@@ -3,6 +3,7 @@ import { getWorkspace } from "@/server/queries";
 import { parseRange } from "@/lib/view-filter";
 import { todayInTz, addDays, formatDateHuman, dayDiff } from "@/lib/date-time";
 import { sortTasks } from "@/lib/sort";
+import { isDoneGrouped } from "@/lib/task-helpers";
 import { ViewTabs } from "@/components/ui/view-tabs";
 import { TaskCard } from "@/components/tasks/task-card";
 import type { TaskWithMeta } from "@/types/task";
@@ -23,7 +24,7 @@ export default async function UpcomingPage({
   const end = addDays(today, span);
 
   const relevant = ws.tasks.filter((t) => {
-    if (t.is_fully_complete) return false;
+    if (isDoneGrouped(t, today)) return false; // also hides done-today recurring
     if (t.type === "team" && t.user_id !== user.id) return false;
     const d = t.date ?? t.due_date;
     return !!d && d >= today && d <= end;

@@ -26,6 +26,7 @@ import { useTaskModal, useListCollapse } from "@/lib/stores";
 import { useToday } from "@/components/today-context";
 import { confirmDialog, promptDialog } from "@/components/ui/dialog";
 import { sortTasks } from "@/lib/sort";
+import { isDoneGrouped } from "@/lib/task-helpers";
 import { filterByDone, type DoneFilter } from "@/lib/view-filter";
 import { moveTaskToList } from "@/server/actions/tasks";
 import {
@@ -62,6 +63,7 @@ export function ListBoard({
   showPersonal?: boolean;
 }) {
   const router = useRouter();
+  const today = useToday();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
@@ -78,8 +80,8 @@ export function ListBoard({
   }, [tasks]);
 
   const visibleTasks = useMemo(
-    () => filterByDone(tasks, filter),
-    [tasks, filter],
+    () => filterByDone(tasks, filter, today),
+    [tasks, filter, today],
   );
 
   const byList = useMemo(() => {
@@ -143,6 +145,7 @@ export function ListBoard({
             canCreate={!!teamId}
             onCreate={(name) => createList(name, "team", teamId)}
             router={router}
+            filter={filter}
           />
         )}
         {showPersonal && (
@@ -153,6 +156,7 @@ export function ListBoard({
             canCreate
             onCreate={(name) => createList(name, "personal")}
             router={router}
+            filter={filter}
           />
         )}
       </div>
@@ -174,6 +178,7 @@ function Column({
   canCreate,
   onCreate,
   router,
+  filter,
 }: {
   title: string;
   lists: List[];
@@ -181,6 +186,7 @@ function Column({
   canCreate: boolean;
   onCreate: (name: string) => Promise<{ error?: string }>;
   router: ReturnType<typeof useRouter>;
+  filter: DoneFilter;
 }) {
   return (
     <div className="space-y-3">
@@ -198,6 +204,7 @@ function Column({
               list={l}
               tasks={byList[l.id] ?? []}
               router={router}
+              filter={filter}
             />
           ))}
         </div>
@@ -217,10 +224,12 @@ function ListCard({
   list,
   tasks,
   router,
+  filter,
 }: {
   list: List;
   tasks: TaskWithMeta[];
   router: ReturnType<typeof useRouter>;
+  filter: DoneFilter;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: list.id });
@@ -229,7 +238,11 @@ function ListCard({
   const today = useToday();
   const collapsed = useListCollapse((s) => s.collapsed[list.id] ?? false);
   const toggleCollapse = useListCollapse((s) => s.toggle);
+  const [doneOpen, setDoneOpen] = useState(false);
   const [, start] = useTransition();
+
+  const undoneTasks = tasks.filter((t) => !isDoneGrouped(t, today));
+  const doneTasks = tasks.filter((t) => isDoneGrouped(t, today));
 
   async function rename() {
     const name = await promptDialog({
@@ -332,9 +345,39 @@ function ListCard({
               Drop tasks here or add one.
             </p>
           )}
-          {sortTasks(tasks, today).map((t) => (
+          {sortTasks(undoneTasks, today).map((t) => (
             <DraggableTask key={t.id} task={t} />
           ))}
+          {filter === "done" &&
+            sortTasks(doneTasks, today).map((t) => (
+              <DraggableTask key={t.id} task={t} />
+            ))}
+          {filter === "all" && doneTasks.length > 0 && (
+            <div className="pt-1">
+              <button
+                onClick={() => setDoneOpen((o) => !o)}
+                className="flex w-full items-center gap-1.5 rounded px-1 py-1 text-xs font-medium text-muted hover:bg-surface-2"
+              >
+                <IconChevron
+                  className={clsx(
+                    "h-3.5 w-3.5 transition-transform",
+                    doneOpen && "rotate-90",
+                  )}
+                />
+                <span>Done</span>
+                <span className="chip bg-surface-2 text-muted">
+                  {doneTasks.length}
+                </span>
+              </button>
+              {doneOpen && (
+                <div className="mt-1 space-y-2">
+                  {sortTasks(doneTasks, today).map((t) => (
+                    <DraggableTask key={t.id} task={t} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

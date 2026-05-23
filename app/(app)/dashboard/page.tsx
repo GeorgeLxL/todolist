@@ -1,7 +1,7 @@
 import { requireUser } from "@/lib/auth/current-user";
 import { getWorkspace, getUpcomingBirthdays } from "@/server/queries";
 import { todayInTz, addDays } from "@/lib/date-time";
-import { isOverdue } from "@/lib/task-helpers";
+import { isOverdue, isDoneGrouped } from "@/lib/task-helpers";
 import { sortTasks } from "@/lib/sort";
 import { TaskCard } from "@/components/tasks/task-card";
 import { IconCake } from "@/components/icons";
@@ -51,7 +51,10 @@ export default async function DashboardPage() {
   const weekEnd = addDays(today, 7);
   const weekAgo = addDays(today, -7);
 
-  const undone = ws.tasks.filter((t) => !t.is_fully_complete);
+  // Treat done-today recurring tasks as done for these "active" sections,
+  // so the dashboard's Today / Overdue / Upcoming etc. stay focused on
+  // what still needs attention.
+  const undone = ws.tasks.filter((t) => !isDoneGrouped(t, today));
 
   const todayTasks = undone.filter(
     (t) => t.date === today || t.due_date === today,

@@ -41,7 +41,10 @@ export function KanbanBoard({
     setStatusMap(Object.fromEntries(tasks.map((t) => [t.id, t.status])));
   }, [tasks]);
 
-  const visible = useMemo(() => filterByDone(tasks, filter), [tasks, filter]);
+  const visible = useMemo(
+    () => filterByDone(tasks, filter, today),
+    [tasks, filter, today],
+  );
 
   const columns = useMemo(() => {
     const map: Record<TaskStatus, TaskWithMeta[]> = {
@@ -95,7 +98,7 @@ export function KanbanBoard({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid h-full grid-cols-2 xl:grid-cols-4 xl:divide-x">
         {TASK_STATUSES.map((status) => (
           <KanbanColumn
             key={status}
@@ -127,15 +130,15 @@ function KanbanColumn({
     <div
       ref={setNodeRef}
       className={clsx(
-        "flex flex-col rounded-xl border bg-surface-2/50 p-2",
-        isOver && "ring-2 ring-primary",
+        "flex min-h-0 flex-col p-3 transition-colors",
+        isOver && "bg-primary/5",
       )}
     >
-      <div className="mb-2 flex items-center justify-between px-1">
+      <div className="mb-2 flex items-center justify-between">
         <h3 className="text-sm font-semibold">{STATUS_LABEL[status]}</h3>
         <span className="chip bg-surface-2 text-muted">{tasks.length}</span>
       </div>
-      <div className="min-h-[120px] space-y-2">
+      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
         {tasks.map((t) => (
           <DraggableCard key={t.id} task={t} />
         ))}

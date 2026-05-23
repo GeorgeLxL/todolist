@@ -16,9 +16,11 @@ export default async function KanbanPage({
   const sp = await searchParams;
 
   return (
-    <div className="space-y-4">
+    <div className="flex h-full flex-col gap-3">
       <ViewTabs />
-      <KanbanBoard tasks={ws.tasks} filter={parseDoneFilter(sp.filter)} />
+      <div className="min-h-0 flex-1">
+        <KanbanBoard tasks={ws.tasks} filter={parseDoneFilter(sp.filter)} />
+      </div>
     </div>
   );
 }
