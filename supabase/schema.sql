@@ -106,8 +106,9 @@ create table if not exists tasks (
   description       text,
   date              date,
   time              time,
+  -- For non-recurring tasks: optional deadline.
+  -- For recurring tasks: required end-of-recurrence date.
   due_date          date,
-  end_date          date,
   timezone          text,
   status            text not null default 'todo'
                        check (status in ('todo','progress','review','done')),
@@ -116,7 +117,6 @@ create table if not exists tasks (
                        check (repeat_type in ('none','daily','weekly','monthly',
                                               'workdays','weekends','custom')),
   repeat_interval   int not null default 1,           -- "every N" for custom
-  repeat_until      date,
   is_done_today     boolean not null default false,
   done_today_date   date,                             -- day is_done_today refers to (lazy reset)
   is_fully_complete boolean not null default false,

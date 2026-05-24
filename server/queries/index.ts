@@ -94,20 +94,27 @@ export const getWorkspace = cache(async function getWorkspace(
 
   const todayStr = todayInTz(user.timezone);
 
-  // Roll recurring tasks forward to today. A recurring task created or marked
-  // done on a previous day should reappear today: clear stale is_done_today
-  // (status back to "todo") and advance `date` to today. This makes them show
-  // up in Dashboard Today, Upcoming, Calendar, Kanban, etc. on the new day.
-  // Self-quiescing: once a task is rolled forward, it's a no-op until tomorrow.
+  // Roll recurring tasks forward to today, so every non-fully-complete
+  // recurring task shows up daily (in Dashboard Today, Upcoming, Calendar,
+  // Kanban, ...) until its due_date (= end of recurrence).
+  //  - clear stale is_done_today (status back to "todo")
+  //  - advance `date` to today (covers tasks not done yesterday, tasks with
+  //    older stale dates, and legacy tasks with no date at all)
+  // Self-quiescing: once rolled forward today, it's a no-op until tomorrow.
   for (const t of rawTasks) {
     if (!t.is_recurring || t.is_fully_complete) continue;
+
+    // Recurrence has ended (due_date doubles as "repeat until" for recurring
+    // tasks) - stop the daily rollover.
+    if (t.due_date && t.due_date < todayStr) continue;
+
     const update: Record<string, unknown> = {};
     if (t.done_today_date && t.done_today_date < todayStr) {
       update.is_done_today = false;
       update.done_today_date = null;
       update.status = "todo";
     }
-    if (t.date && t.date < todayStr) {
+    if (!t.date || t.date < todayStr) {
       update.date = todayStr;
     }
     if (Object.keys(update).length === 0) continue;

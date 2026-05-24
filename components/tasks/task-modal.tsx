@@ -61,7 +61,6 @@ function TaskForm({
   const [date, setDate] = useState(editing?.date ?? "");
   const [time, setTime] = useState(editing?.time?.slice(0, 5) ?? "");
   const [dueDate, setDueDate] = useState(editing?.due_date ?? "");
-  const [endDate, setEndDate] = useState(editing?.end_date ?? "");
   const [isUrgent, setIsUrgent] = useState(editing?.is_urgent ?? false);
   const [isImportant, setIsImportant] = useState(
     editing?.is_important ?? false,
@@ -73,7 +72,6 @@ function TaskForm({
   const [repeatInterval, setRepeatInterval] = useState(
     editing?.repeat_interval ?? 1,
   );
-  const [repeatUntil, setRepeatUntil] = useState(editing?.repeat_until ?? "");
   const [assignee, setAssignee] = useState(editing?.user_id ?? "");
 
   const selectedList = lists.find((l) => l.id === listId);
@@ -81,6 +79,8 @@ function TaskForm({
     selectedList?.type === "team"
       ? teams.find((t) => t.id === selectedList.team_id)
       : undefined;
+
+  const isRecurring = repeatType !== "none";
 
   function submit() {
     setError("");
@@ -99,13 +99,11 @@ function TaskForm({
       date: date || null,
       time: time || null,
       due_date: dueDate || null,
-      end_date: endDate || null,
       is_urgent: isUrgent,
       is_important: isImportant,
       notify,
       repeat_type: repeatType,
       repeat_interval: repeatInterval,
-      repeat_until: repeatUntil || null,
       user_id: team ? assignee || null : undefined,
     };
     start(async () => {
@@ -207,31 +205,17 @@ function TaskForm({
             onChange={(e) => setTime(e.target.value)}
           />
         </div>
-        {repeatType === "none" ? (
-          <div>
-            <label className="mb-1 block text-xs font-medium text-muted">
-              Due date
-            </label>
-            <input
-              type="date"
-              className="input"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
-          </div>
-        ) : (
-          <div>
-            <label className="mb-1 block text-xs font-medium text-muted">
-              End date
-            </label>
-            <input
-              type="date"
-              className="input"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-        )}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted">
+            {isRecurring ? "Repeat until" : "Due date"}
+          </label>
+          <input
+            type="date"
+            className="input"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -242,7 +226,16 @@ function TaskForm({
           <select
             className="input"
             value={repeatType}
-            onChange={(e) => setRepeatType(e.target.value as RepeatType)}
+            onChange={(e) => {
+              const next = e.target.value as RepeatType;
+              const wasRecurring = repeatType !== "none";
+              const nextRecurring = next !== "none";
+              setRepeatType(next);
+              // Crossing the recurring boundary changes what `due_date` means
+              // (deadline vs end-of-recurrence) - clear it so the user picks
+              // an appropriate value for the new context.
+              if (wasRecurring !== nextRecurring) setDueDate("");
+            }}
           >
             <option value="none">Does not repeat</option>
             <option value="daily">Daily</option>
@@ -266,19 +259,6 @@ function TaskForm({
               onChange={(e) =>
                 setRepeatInterval(Math.max(1, Number(e.target.value)))
               }
-            />
-          </div>
-        )}
-        {repeatType !== "none" && (
-          <div>
-            <label className="mb-1 block text-xs font-medium text-muted">
-              Repeat until
-            </label>
-            <input
-              type="date"
-              className="input"
-              value={repeatUntil}
-              onChange={(e) => setRepeatUntil(e.target.value)}
             />
           </div>
         )}

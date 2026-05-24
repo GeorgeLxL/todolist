@@ -28,14 +28,14 @@ export interface Task {
   description: string | null;
   date: string | null;
   time: string | null;
+  // For non-recurring tasks: the optional deadline.
+  // For recurring tasks: the (required) date the recurrence stops.
   due_date: string | null;
-  end_date: string | null;
   timezone: string | null;
   status: TaskStatus;
   is_recurring: boolean;
   repeat_type: RepeatType;
   repeat_interval: number;
-  repeat_until: string | null;
   is_done_today: boolean;
   done_today_date: string | null;
   is_fully_complete: boolean;

@@ -211,7 +211,10 @@ export function TaskCard({
             {local.time && <span>{formatTime(local.time)}</span>}
             {local.date && <span>{formatDateHuman(local.date)}</span>}
             {local.due_date && (
-              <span>Due {formatDateHuman(local.due_date)}</span>
+              <span>
+                {local.is_recurring ? "Until" : "Due"}{" "}
+                {formatDateHuman(local.due_date)}
+              </span>
             )}
             {showList && <span>· {local.list_name}</span>}
             {local.type === "team" && (

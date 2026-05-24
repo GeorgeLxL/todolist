@@ -16,13 +16,12 @@ export interface TaskInput {
   description?: string | null;
   date?: string | null;
   time?: string | null;
+  /** Non-recurring: optional deadline. Recurring: required end-of-recurrence date. */
   due_date?: string | null;
-  end_date?: string | null;
   status?: TaskStatus;
   is_recurring?: boolean;
   repeat_type?: RepeatType;
   repeat_interval?: number;
-  repeat_until?: string | null;
   is_important?: boolean;
   is_urgent?: boolean;
   notify?: boolean;
@@ -96,15 +95,13 @@ export async function createTask(input: TaskInput): Promise<Result> {
       description: input.description ?? null,
       date,
       time: input.time || null,
-      // due_date applies only to non-recurring tasks; end_date only to recurring.
-      due_date: isRecurring ? null : input.due_date || null,
-      end_date: isRecurring ? input.end_date || null : null,
+      // Non-recurring: deadline (optional). Recurring: end-of-recurrence (required).
+      due_date: input.due_date || null,
       timezone,
       status: input.status ?? "todo",
       is_recurring: isRecurring,
       repeat_type: repeatType,
       repeat_interval: input.repeat_interval ?? 1,
-      repeat_until: input.repeat_until || null,
       is_important: input.is_important ?? false,
       is_urgent: input.is_urgent ?? false,
       notify: input.notify ?? true,
@@ -142,7 +139,6 @@ export async function updateTask(
   if (patch.date !== undefined) update.date = patch.date || null;
   if (patch.time !== undefined) update.time = patch.time || null;
   if (patch.due_date !== undefined) update.due_date = patch.due_date || null;
-  if (patch.end_date !== undefined) update.end_date = patch.end_date || null;
   if (patch.status !== undefined) update.status = patch.status;
   if (patch.is_important !== undefined) update.is_important = patch.is_important;
   if (patch.is_urgent !== undefined) update.is_urgent = patch.is_urgent;
@@ -155,8 +151,6 @@ export async function updateTask(
   }
   if (patch.repeat_interval !== undefined)
     update.repeat_interval = patch.repeat_interval;
-  if (patch.repeat_until !== undefined)
-    update.repeat_until = patch.repeat_until || null;
 
   // Keep recurring tasks dated so they stay visible in date-based views.
   const resultingRecurring =
@@ -165,14 +159,6 @@ export async function updateTask(
     patch.date !== undefined ? patch.date || null : task.date;
   if (resultingRecurring && !resultingDate) {
     update.date = todayInTz(task.timezone ?? user.timezone);
-  }
-
-  // due_date applies only to non-recurring tasks; end_date only to recurring.
-  // Clear whichever field does not apply so unused values never linger.
-  if (resultingRecurring) {
-    update.due_date = null;
-  } else {
-    update.end_date = null;
   }
 
   await supabaseAdmin().from("tasks").update(update).eq("id", id);
