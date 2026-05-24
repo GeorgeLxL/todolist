@@ -394,7 +394,16 @@ export async function completeRecurringTask(id: string): Promise<Result> {
     .from("tasks")
     .update(
       fully
-        ? { is_fully_complete: false, status: "progress" }
+        ? {
+            // Un-completing returns the task to a fresh state. Going back to
+            // "progress" without clearing is_done_today would conflict with
+            // the rule "recurring + status=progress => done today", and break
+            // the checkbox.
+            is_fully_complete: false,
+            status: "todo",
+            is_done_today: false,
+            done_today_date: null,
+          }
         : { is_fully_complete: true, status: "done" },
     )
     .eq("id", id);

@@ -93,9 +93,15 @@ export function TaskCard({
   function toggleCheckbox() {
     if (local.is_recurring) {
       if (fully) {
-        // A fully-completed recurring task: unchecking re-opens it.
+        // A fully-completed recurring task: unchecking re-opens it to a
+        // fresh state (todo, not done today).
         mutate(
-          { is_fully_complete: false, status: "progress" },
+          {
+            is_fully_complete: false,
+            status: "todo",
+            is_done_today: false,
+            done_today_date: null,
+          },
           () => completeRecurringTask(local.id),
         );
       } else {
@@ -123,7 +129,12 @@ export function TaskCard({
   function toggleComplete() {
     mutate(
       fully
-        ? { is_fully_complete: false, status: "progress" }
+        ? {
+            is_fully_complete: false,
+            status: "todo",
+            is_done_today: false,
+            done_today_date: null,
+          }
         : { is_fully_complete: true, status: "done" },
       () => completeRecurringTask(local.id),
     );
