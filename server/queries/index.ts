@@ -92,9 +92,31 @@ export const getWorkspace = cache(async function getWorkspace(
     ...((teamTasksRes.data ?? []) as Task[]),
   ];
 
+  const todayStr = todayInTz(user.timezone);
+
+  // Roll recurring tasks forward to today. A recurring task created or marked
+  // done on a previous day should reappear today: clear stale is_done_today
+  // (status back to "todo") and advance `date` to today. This makes them show
+  // up in Dashboard Today, Upcoming, Calendar, Kanban, etc. on the new day.
+  // Self-quiescing: once a task is rolled forward, it's a no-op until tomorrow.
+  for (const t of rawTasks) {
+    if (!t.is_recurring || t.is_fully_complete) continue;
+    const update: Record<string, unknown> = {};
+    if (t.done_today_date && t.done_today_date < todayStr) {
+      update.is_done_today = false;
+      update.done_today_date = null;
+      update.status = "todo";
+    }
+    if (t.date && t.date < todayStr) {
+      update.date = todayStr;
+    }
+    if (Object.keys(update).length === 0) continue;
+    await db.from("tasks").update(update).eq("id", t.id);
+    Object.assign(t, update);
+  }
+
   // Overdue tasks are automatically flagged urgent. This runs at most once
   // per task (afterwards they are already urgent, so the set is empty).
-  const todayStr = todayInTz(user.timezone);
   const overdueIds = rawTasks
     .filter(
       (t) =>
