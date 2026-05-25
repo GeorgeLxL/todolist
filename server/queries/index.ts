@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getUserTeamIds } from "@/lib/permissions";
-import { todayInTz } from "@/lib/date-time";
+import { todayInTz, addDays } from "@/lib/date-time";
 import type { User } from "@/types/user";
 import type { List } from "@/types/list";
 import type { Task, TaskWithMeta } from "@/types/task";
@@ -93,21 +93,42 @@ export const getWorkspace = cache(async function getWorkspace(
   ];
 
   const todayStr = todayInTz(user.timezone);
+  const tomorrowStr = addDays(todayStr, 1);
+
+  // Auto-complete recurring tasks whose due_date (= end of recurrence) has
+  // passed - the recurrence reached its end.
+  const expiredIds = rawTasks
+    .filter(
+      (t) =>
+        t.is_recurring &&
+        !t.is_fully_complete &&
+        !!t.due_date &&
+        t.due_date! < todayStr,
+    )
+    .map((t) => t.id);
+  if (expiredIds.length) {
+    await db
+      .from("tasks")
+      .update({ is_fully_complete: true, status: "done" })
+      .in("id", expiredIds);
+    const set = new Set(expiredIds);
+    for (const t of rawTasks) {
+      if (set.has(t.id)) {
+        t.is_fully_complete = true;
+        t.status = "done";
+      }
+    }
+  }
 
   // Roll recurring tasks forward to today, so every non-fully-complete
   // recurring task shows up daily (in Dashboard Today, Upcoming, Calendar,
-  // Kanban, ...) until its due_date (= end of recurrence).
+  // Kanban, ...):
   //  - clear stale is_done_today (status back to "todo")
   //  - advance `date` to today (covers tasks not done yesterday, tasks with
   //    older stale dates, and legacy tasks with no date at all)
   // Self-quiescing: once rolled forward today, it's a no-op until tomorrow.
   for (const t of rawTasks) {
     if (!t.is_recurring || t.is_fully_complete) continue;
-
-    // Recurrence has ended (due_date doubles as "repeat until" for recurring
-    // tasks) - stop the daily rollover.
-    if (t.due_date && t.due_date < todayStr) continue;
-
     const update: Record<string, unknown> = {};
     if (t.done_today_date && t.done_today_date < todayStr) {
       update.is_done_today = false;
@@ -122,23 +143,22 @@ export const getWorkspace = cache(async function getWorkspace(
     Object.assign(t, update);
   }
 
-  // Overdue tasks are automatically flagged urgent. This runs at most once
-  // per task (afterwards they are already urgent, so the set is empty).
-  const overdueIds = rawTasks
-    .filter(
-      (t) =>
-        !t.is_recurring &&
-        !t.is_urgent &&
-        !t.is_fully_complete &&
-        !!(t.due_date ?? t.date) &&
-        (t.due_date ?? t.date)! < todayStr,
-    )
+  // Auto-flag tasks urgent when their deadline is today, tomorrow, or past.
+  //   Non-recurring: deadline is `due_date ?? date`.
+  //   Recurring:     deadline is `due_date` (= end of recurrence).
+  // Self-quiescing: once urgent, it isn't re-flagged.
+  const urgentIds = rawTasks
+    .filter((t) => {
+      if (t.is_urgent || t.is_fully_complete) return false;
+      const deadline = t.is_recurring ? t.due_date : (t.due_date ?? t.date);
+      return !!deadline && deadline <= tomorrowStr;
+    })
     .map((t) => t.id);
-  if (overdueIds.length) {
-    await db.from("tasks").update({ is_urgent: true }).in("id", overdueIds);
-    const overdueSet = new Set(overdueIds);
+  if (urgentIds.length) {
+    await db.from("tasks").update({ is_urgent: true }).in("id", urgentIds);
+    const set = new Set(urgentIds);
     for (const t of rawTasks) {
-      if (overdueSet.has(t.id)) t.is_urgent = true;
+      if (set.has(t.id)) t.is_urgent = true;
     }
   }
 
