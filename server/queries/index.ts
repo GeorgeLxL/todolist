@@ -143,6 +143,20 @@ export const getWorkspace = cache(async function getWorkspace(
     Object.assign(t, update);
   }
 
+  // Roll non-recurring undone tasks forward too. If the scheduled date or
+  // due_date is in the past, advance `date` to today so the task keeps
+  // surfacing in date-based views every day until completed. The original
+  // due_date stays put, so an overdue task still reads as overdue.
+  for (const t of rawTasks) {
+    if (t.is_recurring || t.is_fully_complete) continue;
+    const datePast = t.date && t.date < todayStr;
+    const duePast = t.due_date && t.due_date < todayStr;
+    if (!datePast && !duePast) continue;
+    if (t.date === todayStr) continue;
+    await db.from("tasks").update({ date: todayStr }).eq("id", t.id);
+    t.date = todayStr;
+  }
+
   // Auto-flag tasks urgent when their deadline is today, tomorrow, or past.
   //   Non-recurring: deadline is `due_date ?? date`.
   //   Recurring:     deadline is `due_date` (= end of recurrence).
